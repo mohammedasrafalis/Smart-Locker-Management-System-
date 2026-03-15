@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Locker Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+    body{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;display:flex;justify-content:center;align-items:center;position:relative;overflow:hidden;}
+    body::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="%23ffffff" opacity="0.05"/><circle cx="75" cy="75" r="1" fill="%23ffffff" opacity="0.05"/><circle cx="50" cy="10" r="0.5" fill="%23ffffff" opacity="0.05"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');}
+    .login-container{background:#fff;padding:50px;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.3);width:100%;max-width:450px;text-align:center;position:relative;z-index:1;animation:slideIn 0.6s ease-out;}
+    .login-container::before{content:'';position:absolute;top:-5px;left:-5px;right:-5px;bottom:-5px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:25px;z-index:-1;}
+    .login-container h2{margin-bottom:40px;color:#333;font-weight:700;font-size:2rem;display:flex;align-items:center;justify-content:center;gap:10px;}
+    .login-container h2 i{color:#667eea;}
+    .input-group{position:relative;margin-bottom:25px;}
+    .input-group input{width:100%;padding:15px 20px;padding-left:50px;border-radius:12px;border:2px solid #eee;font-size:1rem;background:#f9f9f9;transition:0.3s;}
+    .input-group input:focus{border-color:#667eea;outline:none;background:#fff;box-shadow:0 0 15px rgba(102,126,234,0.2);}
+    .input-group i{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#999;font-size:1.2rem;}
+    .login-container button{width:100%;padding:15px;border:none;border-radius:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:1.1rem;font-weight:600;cursor:pointer;transition:0.3s;margin-top:10px;position:relative;overflow:hidden;}
+    .login-container button::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);transition:0.5s;}
+    .login-container button:hover::before{left:100%;}
+    .login-container button:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(102,126,234,0.4);}
+    .login-container p{margin-top:30px;font-size:0.95rem;color:#666;}
+    .login-container p a{color:#667eea;text-decoration:none;font-weight:600;transition:0.3s;}
+    .login-container p a:hover{color:#764ba2;text-decoration:underline;}
+    .error{color:#e74c3c;font-size:0.9rem;margin-bottom:15px;background:#ffeaea;padding:10px;border-radius:8px;border-left:4px solid #e74c3c;}
+    @keyframes slideIn{from{opacity:0;transform:translateY(50px) scale(0.9);}to{opacity:1;transform:translateY(0) scale(1);}}
+    @media(max-width:480px){.login-container{max-width:90%;padding:30px;}}
+</style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2><i class="fas fa-lock"></i> Login to Smart Locker</h2>
+    <div id="error-msg" class="error" style="display:none;"></div>
+    <div class="input-group">
+        <i class="fas fa-user"></i>
+        <input type="text" id="username" placeholder="Username" required>
+    </div>
+    <div class="input-group">
+        <i class="fas fa-key"></i>
+        <input type="password" id="password" placeholder="Password" required>
+    </div>
+    <button onclick="loginUser()">Login <i class="fas fa-sign-in-alt"></i></button>
+    <p>Don't have an account? <a href="register/">Register here</a></p>
+</div>
+
+<script>
+async function loginUser(){
+    const username=document.getElementById('username').value.trim();
+    const password=document.getElementById('password').value.trim();
+    const errorDiv=document.getElementById('error-msg');
+    if(!username||!password){
+        errorDiv.textContent="Enter both username and password";
+        errorDiv.style.display="block";
+        return;
+    }
+    errorDiv.style.display="none";
+    try{
+        const res=await fetch('/api/auth/login/',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+        const data=await res.json();
+        if(res.status===200){
+            localStorage.setItem('jwt',data.access);
+            localStorage.setItem('refresh',data.refresh);
+            localStorage.setItem('role',data.role);
+            if(data.role === 'admin'){
+                window.location.href='/admin/';
+            } else {
+                window.location.href='/user/';
+            }
+        } else {
+            errorDiv.textContent=data.detail||"Invalid credentials";
+            errorDiv.style.display="block";
+        }
+    } catch(err){
+        errorDiv.textContent="Server error";
+        errorDiv.style.display="block";
+        console.error(err);
+    }
+}
+</script>
+
+</body>
+</html>

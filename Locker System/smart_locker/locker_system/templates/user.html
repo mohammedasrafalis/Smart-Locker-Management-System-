@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Locker - User Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+        body{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px;}
+        .container{max-width:1200px;margin:0 auto;background:#fff;border-radius:20px;padding:30px;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+        h1{text-align:center;margin-bottom:30px;color:#333;}
+        .logout{float:right;background:#e74c3c;color:#fff;border:none;padding:10px 20px;border-radius:10px;cursor:pointer;}
+        .section{margin-bottom:40px;}
+        .release{float:right;background:#e74c3c;color:#fff;border:none;padding:10px 20px;border-radius:10px;cursor:pointer;}
+        .section h2{margin-bottom:20px;color:#667eea;}
+        .locker-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;}
+        .locker-card{background:#f9f9f9;padding:20px;border-radius:10px;text-align:center;border:2px solid #eee;}
+        .locker-card.available{border-color:#27ae60;}
+        .locker-card button{margin-top:10px;padding:8px 15px;border:none;border-radius:5px;cursor:pointer;}
+        .reserve{background:#27ae60;color:#fff;}
+        .release{background:#e74c3c;color:#fff;}
+        .reservation-list{list-style:none;}
+        .reservation-item{background:#f9f9f9;padding:15px;margin-bottom:10px;border-radius:10px;display:flex;justify-content:space-between;align-items:center;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="logout" onclick="logout()">Logout</button>
+        <h1><i class="fas fa-user"></i> User Dashboard</h1>
+
+        <div class="section">
+            <h2>Available Lockers</h2>
+            <div id="available-lockers" class="locker-list"></div>
+        </div>
+
+        <div class="section">
+            <h2>My Reservations</h2>
+            <ul id="reservations" class="reservation-list"></ul>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('jwt');
+
+        if(!token){
+            window.location.href='/login/';
+        }
+
+        async function loadAvailableLockers(){
+            try{
+                const res = await fetch('/api/lockers/available/', {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const lockers = await res.json();
+                const container = document.getElementById('available-lockers');
+                container.innerHTML = lockers.map(l => `
+                    <div class="locker-card available">
+                        <h3>${l.locker_number}</h3>
+                        <p>${l.location}</p>
+                        <button class="reserve" onclick="reserve(${l.id})">Reserve</button>
+                    </div>
+                `).join('');
+            } catch(err){
+                console.error(err);
+            }
+        }
+
+        async function loadReservations(){
+            try{
+                const res = await fetch('/api/my-reservations/', {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const reservations = await res.json();
+                const container = document.getElementById('reservations');
+                container.innerHTML = reservations.map(r => `
+                    <li class="reservation-item">
+                        <span>${r.locker.locker_number} - ${r.locker.location}</span>
+                        <button class="release" onclick="release(${r.id})">Release</button>
+                    </li>
+                `).join('');
+            } catch(err){
+                console.error(err);
+            }
+        }
+
+        async function release(reservationId){
+            try{
+                const res = await fetch(`/api/reservations/${reservationId}/release/`, {
+                    method: 'PUT',
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                if(res.ok){
+                    alert('Released!');
+                    loadAvailableLockers();
+                    loadReservations();
+                } else {
+                    alert('Error');
+                }
+            } catch(err){
+                console.error(err);
+            }
+        }
+
+        async function reserve(lockerId){
+            try{
+                const res = await fetch('/api/reservations/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({locker_id: lockerId})
+                });
+                if(res.ok){
+                    alert('Reserved!');
+                    loadAvailableLockers();
+                    loadReservations();
+                } else {
+                    alert('Error reserving');
+                }
+            } catch(err){
+                console.error(err);
+            }
+        }
+
+        function logout(){
+            localStorage.clear();
+            window.location.href='/';
+        }
+
+        loadAvailableLockers();
+        loadReservations();
+    </script>
+</body>
+</html>

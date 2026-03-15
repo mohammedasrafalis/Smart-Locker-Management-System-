@@ -1,0 +1,11 @@
+package installation's
+
+pip install djangorestframework
+pip install djangorestframework-simplejwt
+pip install redis
+pip install django-redis
+
+Project run 
+
+python manage.py runserver
+

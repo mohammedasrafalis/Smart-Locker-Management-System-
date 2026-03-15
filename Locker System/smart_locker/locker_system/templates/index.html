@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Smart Locker System</title>
+<link rel="icon" href="/static/lock-icon.svg" type="image/svg+xml">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif; }
+    body { background:#f4f7f9; color:#333; overflow-x:hidden; }
+    a { text-decoration:none; color:inherit; transition:0.3s; }
+    nav { background:linear-gradient(135deg, #1f1f1f, #2c2c2c); color:#fff; display:flex; justify-content:space-between; align-items:center; padding:15px 50px; position:fixed; top:0; width:100%; z-index:1000; box-shadow:0 2px 20px rgba(0,0,0,0.3); }
+    .logo { font-size:1.8rem; font-weight:700; letter-spacing:1px; display:flex; align-items:center; gap:10px; }
+    .logo i { color:#f39c12; }
+    .nav-links { list-style:none; display:flex; gap:25px; }
+    .nav-links a { color:#fff; font-weight:500; position:relative; }
+    .nav-links a::after { content:''; position:absolute; width:0; height:2px; bottom:-5px; left:0; background:#f39c12; transition:0.3s; }
+    .nav-links a:hover::after { width:100%; }
+    .nav-links a:hover { color:#f39c12; transform:translateY(-2px); }
+    .logout-btn { background:#e74c3c; color:#fff; border:none; padding:8px 15px; border-radius:5px; cursor:pointer; font-weight:500; transition:0.3s; }
+    .logout-btn:hover { background:#c0392b; transform:translateY(-2px); }
+    .hero { height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; background:linear-gradient(135deg,#f39c12,#ff7f50,#e74c3c); color:#fff; text-align:center; padding:0 20px; position:relative; overflow:hidden; }
+    .hero::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="%23ffffff" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="%23ffffff" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>'); opacity:0.1; }
+    .hero h1 { font-size:3.5rem; margin-bottom:15px; font-weight:700; text-shadow:2px 2px 4px rgba(0,0,0,0.3); animation:fadeInUp 1s ease-out; }
+    .hero p { font-size:1.3rem; max-width:600px; font-weight:300; animation:fadeInUp 1s ease-out 0.2s both; }
+    .hero .cta-button { background:#fff; color:#f39c12; padding:15px 30px; border-radius:50px; font-weight:600; margin-top:30px; display:inline-block; box-shadow:0 5px 15px rgba(0,0,0,0.2); animation:fadeInUp 1s ease-out 0.4s both; }
+    .hero .cta-button:hover { transform:translateY(-3px); box-shadow:0 8px 25px rgba(0,0,0,0.3); }
+    section { padding:80px 20px; text-align:center; position:relative; }
+    .section-title{text-align:center;font-size:32px;margin-bottom:40px;color:#333;}
+    .locker-container{display:flex;justify-content:center;gap:30px;flex-wrap:wrap;}
+    .locker-card{width:220px;padding:30px 20px;border-radius:15px;background:white;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.15);transition:all 0.4s ease;position:relative;overflow:hidden;}
+
+/* Hover Animation */
+.locker-card:hover{
+transform:translateY(-10px) scale(1.05);
+box-shadow:0 20px 40px rgba(0,0,0,0.2);
+}
+
+/* Locker Title */
+
+.locker-card h3{
+margin-bottom:10px;
+font-size:22px;
+}
+
+/* Button */
+
+.locker-card button{
+margin-top:15px;
+padding:10px 18px;
+border:none;
+border-radius:25px;
+font-size:14px;
+cursor:pointer;
+transition:0.3s;
+}
+
+/* Available */
+
+.available{
+background:linear-gradient(135deg,#00c853,#69f0ae);
+color:white;
+}
+
+.available button{
+background:white;
+color:#00a844;
+}
+
+.available button:hover{
+background:#e8fff1;
+}
+
+/* Reserved */
+
+.reserved{
+background:linear-gradient(135deg,#ffb300,#ffd54f);
+color:white;
+}
+
+.reserved button{
+background:white;
+color:#e6a000;
+cursor:not-allowed;
+}
+
+/* Occupied */
+
+.occupied{
+background:linear-gradient(135deg,#ff1744,#ff8a80);
+color:white;
+}
+
+.occupied button{
+background:white;
+color:#d50000;
+cursor:not-allowed;
+}
+    section h2 { font-size:2.5rem; margin-bottom:30px; color:#1f1f1f; font-weight:600; position:relative; }
+    section h2::after { content:''; position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); width:50px; height:3px; background:#f39c12; }
+    #locker-list { display:flex; flex-wrap:wrap; justify-content:center; gap:25px; margin-top:40px; }
+    .locker { background:#fff; border-radius:15px; padding:25px; width:140px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.1); cursor:pointer; transition:0.4s; font-weight:600; position:relative; overflow:hidden; }
+    .locker::before { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background:linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); transition:0.5s; }
+    .locker:hover::before { left:100%; }
+    .locker:hover { transform:translateY(-8px) scale(1.05); box-shadow:0 12px 40px rgba(0,0,0,0.2); }
+    .locker.occupied { background:linear-gradient(135deg, #e74c3c, #c0392b); color:#fff; cursor:not-allowed; }
+    .locker.occupied::after { content:'🔒'; position:absolute; top:5px; right:5px; font-size:1.2rem; }
+    #admin-panel { display:none; max-width:700px; margin:0 auto; text-align:left; background:#fff; padding:40px; border-radius:15px; box-shadow:0 8px 30px rgba(0,0,0,0.1); animation:slideIn 0.5s ease-out; }
+    #admin-panel h2 { margin-bottom:30px; color:#1f1f1f; }
+    #admin-panel input, #admin-panel select { width:100%; padding:15px; margin:10px 0; border-radius:10px; border:2px solid #eee; font-size:1rem; transition:0.3s; }
+    #admin-panel input:focus, #admin-panel select:focus { border-color:#f39c12; outline:none; box-shadow:0 0 10px rgba(243,156,18,0.3); }
+    #admin-panel button { padding:15px 30px; border:none; border-radius:10px; background:linear-gradient(135deg, #f39c12, #ff7f50); color:#fff; cursor:pointer; margin-top:20px; font-weight:600; transition:0.3s; }
+    #admin-panel button:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(243,156,18,0.4); }
+    footer { padding:40px 20px; text-align:center; background:linear-gradient(135deg, #1f1f1f, #2c2c2c); color:#fff; margin-top:80px; position:relative; }
+    footer::before { content:''; position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, #f39c12, #ff7f50, #e74c3c); }
+    @keyframes fadeInUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes slideIn { from { opacity:0; transform:translateY(50px); } to { opacity:1; transform:translateY(0); } }
+    @media(max-width:768px){ nav { flex-direction:column; gap:10px; padding:15px 20px; } .hero h1 { font-size:2.5rem; } .hero p { font-size:1.1rem; } .locker { width:120px; padding:20px; } section h2 { font-size:2rem; } }
+</style>
+</head>
+<body>
+
+<nav>
+    <div class="logo"><i class="fas fa-lock"></i> SmartLocker</div>
+    <ul class="nav-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li id="auth-link"><a href="login/"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+    </ul>
+</nav>
+
+<section id="home" class="hero">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="64" height="64" style="margin-bottom: 20px;">
+      <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm3 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+    </svg>
+    <h1>Welcome to Smart Locker System</h1>
+    <p>Secure, reserve, and manage lockers easily with our cutting-edge technology. Login to access features based on your role.</p>
+    <a href="#lockers" class="cta-button">Explore Lockers</a>
+</section>
+
+<section id="about">
+    <h2>About Us</h2>
+    <p>
+        The <strong>Smart Locker System </strong>  is designed to provide secure and 
+        efficient locker management for organizations. It allows users
+         to reserve lockers in real time while giving administrators 
+         full control over locker allocation and monitoring.
+          With advanced features such as real-time availability 
+          tracking, secure access control, and an easy-to-use 
+          management interface, the system helps organizations
+           streamline locker usage, reduce manual work, and ensure 
+           a safe and organized storage solution.
+    </p>
+</section>
+
+<section id="services">
+    <h2>Services</h2>
+    <p>
+        Our Smart Locker platform allows users to easily check
+        available lockers and reserve them instantly through a
+        simple and user-friendly interface. Administrators can 
+        efficiently manage the locker inventory by adding, updating, 
+        or monitoring lockers in real time. This system ensures smooth 
+        locker allocation, prevents double bookings, and provides 
+        a convenient solution for both users and administrators.
+    </p>
+</section>
+
+<section id="lockers">
+    <h2>Available Lockers</h2>
+    <div id="locker-list">
+
+        <div class="locker-card available">
+            <h3>Locker 101</h3>
+            <p>Status: Available</p>
+            <button>Reserve</button>
+        </div>
+
+        <div class="locker-card reserved">
+            <h3>Locker 102</h3>
+            <p>Status: Reserved</p>
+            <button disabled>Reserved</button>
+        </div>
+
+        <div class="locker-card occupied">
+            <h3>Locker 103</h3>
+            <p>Status: Occupied</p>
+            <button disabled>In Use</button>
+        </div>
+
+    </div>
+</section>
+</section>
+
+<section id="contact">
+    <h2>Contact Us</h2>
+    <p>
+        For support or queries, reach out at 
+        <strong>support@smartlocker.com</strong> 
+        or call <strong>+91 9876543210</strong>.
+    </p>
+</section>
+
+<section id="admin-panel">
+    <h2>Admin Panel</h2>
+    <input type="text" id="locker-number" placeholder="Locker Number">
+    <select id="locker-status">
+        <option value="available">Available</option>
+        <option value="occupied">Occupied</option>
+    </select>
+    <button onclick="addLocker()">Add/Update Locker</button>
+    <div id="admin-feedback"></div>
+</section>
+
+<footer>
+    &copy; 2026 Smart Locker System. All Rights Reserved.
+</footer>
+
+<script>
+let token, role;
+
+try {
+    token = localStorage.getItem('jwt');
+    role = localStorage.getItem('role');
+} catch (e) {
+    console.warn('localStorage not available:', e);
+    token = null;
+    role = null;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if(token){
+        document.getElementById('login-register').style.display='none';
+        if(role==='user'){ getAvailableLockers(); } 
+        else if(role==='admin'){ document.getElementById('admin-panel').style.display='block'; getAllLockers(); }
+    }
+});
+
+async function getAvailableLockers(){
+    const res = await fetch('/api/lockers/available/', { headers:{'Authorization':'Bearer '+token}});
+    const lockers = await res.json();
+    const container=document.getElementById('locker-list'); container.innerHTML='';
+    const msg = document.getElementById('no-lockers-msg');
+    if(lockers.length === 0){
+        msg.textContent = 'No available lockers at the moment.';
+        msg.style.display = 'block';
+    } else {
+        msg.style.display = 'none';
+        lockers.forEach(locker=>{
+            const div=document.createElement('div'); div.className='locker';
+            if(locker.is_occupied) div.classList.add('occupied');
+            div.textContent=locker.locker_number;
+            if(!locker.is_occupied) div.onclick=()=>reserveLocker(locker.id);
+            container.appendChild(div);
+        });
+    }
+}
+
+async function reserveLocker(lockerId){
+    const res=await fetch('/api/reservations/',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({locker_id:lockerId})});
+    const data=await res.json(); alert(data.message || JSON.stringify(data)); getAvailableLockers();
+}
+
+async function getAllLockers(){
+    const res=await fetch('/api/lockers/',{headers:{'Authorization':'Bearer '+token}});
+    const lockers=await res.json(); const container=document.getElementById('locker-list'); container.innerHTML='';
+    const msg = document.getElementById('no-lockers-msg');
+    if(lockers.length === 0){
+        msg.textContent = 'No lockers found.';
+        msg.style.display = 'block';
+    } else {
+        msg.style.display = 'none';
+        lockers.forEach(locker=>{
+            const div=document.createElement('div'); div.className='locker';
+            if(locker.is_occupied) div.classList.add('occupied');
+            div.textContent=locker.locker_number+' ('+locker.status+')'; container.appendChild(div);
+        });
+    }
+}
+
+async function addLocker(){
+    const locker_number=document.getElementById('locker-number').value;
+    const status=document.getElementById('locker-status').value;
+    const res=await fetch('/api/lockers/',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({locker_number,status})});
+    const data=await res.json(); document.getElementById('admin-feedback').textContent=data.message||'Locker updated!'; getAllLockers();
+}
+
+if(token){
+    const authLink = document.getElementById('auth-link');
+    if(authLink){
+        authLink.innerHTML = '<button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>';
+    }
+}
+
+function logout(){
+    localStorage.clear();
+    window.location.href='/';
+}
+</script>
+
+</body>
+</html>

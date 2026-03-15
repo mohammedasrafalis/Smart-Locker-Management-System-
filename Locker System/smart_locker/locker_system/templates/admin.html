@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Locker - Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+        body{background:linear-gradient(135deg,#ff9a9e 0%,#fecfef 100%);min-height:100vh;padding:20px;}
+        .container{max-width:1200px;margin:0 auto;background:#fff;border-radius:20px;padding:30px;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+        h1{text-align:center;margin-bottom:30px;color:#333;}
+        .logout{float:right;background:#e74c3c;color:#fff;border:none;padding:10px 20px;border-radius:10px;cursor:pointer;}
+        .section{margin-bottom:40px;}
+        .section h2{margin-bottom:20px;color:#ff9a9e;}
+        .form-group{margin-bottom:15px;}
+        .form-group input, .form-group select{width:100%;padding:10px;border:1px solid #ccc;border-radius:5px;}
+        button{background:#ff9a9e;color:#fff;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;}
+        .locker-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:20px;}
+        .locker-card{background:#f9f9f9;padding:20px;border-radius:10px;border:2px solid #eee;}
+        .locker-card.available{border-color:#27ae60;}
+        .locker-card.occupied{border-color:#f39c12;}
+        .locker-card.deactivated{border-color:#e74c3c;}
+        .locker-card button{margin:5px;padding:5px 10px;}
+        .edit{background:#3498db;color:#fff;}
+        .delete{background:#e74c3c;color:#fff;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="logout" onclick="logout()">Logout</button>
+        <h1><i class="fas fa-cog"></i> Admin Dashboard</h1>
+
+        <div class="section">
+            <h2 id="form-title">Add New Locker</h2>
+            <input type="hidden" id="locker_id">
+            <div class="form-group">
+                <input type="text" id="locker_number" placeholder="Locker Number" required>
+            </div>
+            <div class="form-group">
+                <input type="text" id="location" placeholder="Location" required>
+            </div>
+            <div class="form-group" >
+                <select id="status" >
+                    <option value="" disabled selected>Select Status</option>
+                    <option value="available">Available</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="deactivated">Deactivated</option>
+                </select>
+            </div>
+            <button id="submit-btn" onclick="addOrUpdateLocker()">Add Locker</button>
+            <button id="cancel-btn" onclick="cancelEdit()" style="background:#95a5a6;">Cancel</button>
+        </div>
+
+        <div class="section">
+            <h2>Bulk Actions</h2>
+            <p>Set status for all lockers:</p>
+            <button onclick="bulkUpdateStatus('available')">Mark All Available</button>
+            <button onclick="bulkUpdateStatus('occupied')">Mark All Occupied</button>
+            <button onclick="bulkUpdateStatus('deactivated')">Mark All Deactivated</button>
+        </div>
+
+        <div class="section">
+            <h2>All Lockers</h2>
+            <div id="all-lockers" class="locker-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('jwt');
+
+        if(!token){
+            window.location.href='/login/';
+        }
+
+        async function loadLockers(){
+            try{
+                const res = await fetch('/api/lockers/', {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const lockers = await res.json();
+                const container = document.getElementById('all-lockers');
+                container.innerHTML = lockers.map(l => `
+                    <div class="locker-card ${l.status}">
+                        <h3>${l.locker_number}</h3>
+                        <p>${l.location}</p>
+                        <p>Status: ${l.status}</p>
+                        <button class="edit" onclick="editLocker(${l.id})">Edit</button>
+                        <button class="delete" onclick="deleteLocker(${l.id})">Delete</button>
+                    </div>
+                `).join('');
+            } catch(err){
+                console.error(err);
+            }
+        }
+
+        async function addOrUpdateLocker(){
+            const id = document.getElementById('locker_id').value;
+            const number = document.getElementById('locker_number').value;
+            const location = document.getElementById('location').value;
+            const status = document.getElementById('status').value;
+            let method = 'POST';
+            let url = '/api/lockers/';
+            if(id){
+                method = 'PUT';
+                url = `/api/lockers/${id}/`;
+            }
+            try{
+                const res = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({locker_number: number, location: location, status: status})
+                });
+                if(res.ok){
+                    alert(id ? 'Updated!' : 'Added!');
+                    loadLockers();
+                    cancelEdit();
+                } else {
+                    alert('Error');
+                }
+            } catch(err){
+                console.error(err);
+            }
+        }
+
+        async function deleteLocker(id){
+            if(confirm('Delete?')){
+                try{
+                    const res = await fetch(`/api/lockers/${id}/`, {
+                        method: 'DELETE',
+                        headers: {'Authorization': `Bearer ${token}`}
+                    });
+                    if(res.ok){
+                        loadLockers();
+                    }
+                } catch(err){
+                    console.error(err);
+                }
+            }
+        }
+
+        async function editLocker(id){
+            
+            try{
+                const res = await fetch(`/api/lockers/${id}/`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const locker = await res.json();
+                document.getElementById('locker_id').value = locker.id;
+                document.getElementById('locker_number').value = locker.locker_number;
+                document.getElementById('location').value = locker.location;
+                document.getElementById('status').value = locker.status;
+                document.getElementById('status').value = locker.status;
+                document.getElementById('form-title').textContent = 'Edit Locker';
+                document.getElementById('submit-btn').textContent = 'Update Locker';
+                document.getElementById('cancel-btn').style.display = 'inline-block';
+            } catch(err){
+                console.error(err);
+            }
+        }
+
+        function cancelEdit(){
+            document.getElementById('locker_id').value = '';
+            document.getElementById('locker_number').value = '';
+            document.getElementById('location').value = '';
+            document.getElementById('status').value = 'available';
+            document.getElementById('form-title').textContent = 'Add New Locker';
+            document.getElementById('submit-btn').textContent = 'Add Locker';
+            document.getElementById('cancel-btn').style.display = 'none';
+        }
+
+        async function bulkUpdateStatus(status){
+            if(!confirm(`Mark all lockers as ${status}?`)) return;
+            try{
+                const res = await fetch('/api/lockers/', {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+                const lockers = await res.json();
+                const updates = lockers.map(locker => 
+                    fetch(`/api/lockers/${locker.id}/`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({...locker, status: status})
+                    })
+                );
+                await Promise.all(updates);
+                alert('All lockers updated!');
+                loadLockers();
+            } catch(err){
+                console.error(err);
+                alert('Error updating lockers');
+            }
+        }
+
+        function logout(){
+            localStorage.clear();
+            window.location.href='/';
+        }
+
+        loadLockers();
+    </script>
+</body>
+</html>
